@@ -14,11 +14,13 @@ resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("*", new
 resourceSet.getURIConverter().getURIHandlers().add(0, new MongoHandler());
 ```
 
-Create a Resource with a URI pointing to MongoDB. The URI must contains 3 segments identifying the database, the collection and the document id. The URI is in the form 
-mongodb://{host}[:{port}]/{db}/{collection}/{id}
+Create a Resource with a URI pointing to MongoDB. The URI must contains 3 segments identifying the database, the collection and the document id.
+
+The URI should have the form ```mongodb://{host}[:{port}]/{db}/{collection}/{id}```
 
 ```java
-Resource resource = resourceSet.createResource(URI.createURI("mongodb://localhost:27017/emfjson-test/models/model1"));
+URI uri = URI.createURI("mongodb://localhost:27017/emfjson-test/models/model1");
+Resource resource = resourceSet.createResource(uri);
 ```
 
 Alternatively, you can use a URI mapping:
