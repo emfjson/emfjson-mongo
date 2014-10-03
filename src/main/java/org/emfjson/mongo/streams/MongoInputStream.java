@@ -38,31 +38,41 @@ public class MongoInputStream extends InputStream implements Loadable {
 		final MongoClient client = MongoHelper.getClient(uri);
 		final DB db = MongoHelper.getDB(client, uri);
 		final DBCollection collection = MongoHelper.getCollection(db, uri);
-		
+
 		DBCursor cursor = collection.find(new BasicDBObject("_id", uri.segment(2)));
 
+		if (!resource.getContents().isEmpty()) {
+			resource.getContents().clear();
+		}
+
 		try {
-		    while (cursor.hasNext()) {
-		    	DBObject dbObject = cursor.next();
-		    	String data = JSON.serialize(dbObject);
+			while (cursor.hasNext()) {
+				DBObject dbObject = cursor.next();
+				String data = JSON.serialize(dbObject);
 
-		    	ObjectMapper jmapper = new ObjectMapper();
-		    	ObjectNode rootNode = (ObjectNode) jmapper.readTree(data);	
-		    	JsonNode contents = rootNode.get("contents");
-
-		    	ObjectReader reader = new ObjectReader(resource, resource.getResourceSet(), Options.from(options).build());
-		    	final EObject result = reader.from(contents);
-
-				if (result != null) {
-					if (!resource.getContents().isEmpty()) {
-						resource.getContents().clear();
-					}
-					resource.getContents().add(result);
-					reader.resolveEntries();
-				}
-		    }		    
+				readJson(resource, data);
+			}
 		} finally {
-		    cursor.close();
+			cursor.close();
+		}
+	}
+
+	private void readJson(Resource resource, String data) throws IOException {
+		ObjectMapper jmapper = new ObjectMapper();
+		ObjectNode rootNode = null;
+		try {
+			rootNode = (ObjectNode) jmapper.readTree(data);
+		} catch (IOException e) {
+			throw e;
+		}
+
+		final JsonNode contents = rootNode.get("contents");
+		final ObjectReader reader = new ObjectReader(resource, Options.from(options).build());
+		final EObject result = reader.from(contents);
+
+		if (result != null) {
+			resource.getContents().add(result);
+			reader.resolveEntries();
 		}
 	}
 
