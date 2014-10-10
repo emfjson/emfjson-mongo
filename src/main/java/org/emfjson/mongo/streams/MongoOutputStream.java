@@ -63,6 +63,7 @@ public class MongoOutputStream extends ByteArrayOutputStream implements Saveable
 
 		final String id = uri.segment(2);
 		resourceNode.put("_id", id);
+		resourceNode.put("_type", "resource");
 		resourceNode.set("contents", contents);
 		
 		return jmapper.writeValueAsString(resourceNode);
