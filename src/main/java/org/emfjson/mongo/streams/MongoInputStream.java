@@ -8,11 +8,9 @@ import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.URIConverter.Loadable;
-import org.emfjson.common.Options;
-import org.emfjson.jackson.map.ObjectReader;
+import org.emfjson.jackson.module.EMFModule;
 import org.emfjson.mongo.MongoHelper;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.mongodb.BasicDBObject;
@@ -58,21 +56,19 @@ public class MongoInputStream extends InputStream implements Loadable {
 	}
 
 	private void readJson(Resource resource, String data) throws IOException {
-		ObjectMapper jmapper = new ObjectMapper();
+		final ObjectMapper mapper = new ObjectMapper();
+		mapper.registerModule(new EMFModule(options));
 		ObjectNode rootNode = null;
 		try {
-			rootNode = (ObjectNode) jmapper.readTree(data);
+			rootNode = (ObjectNode) mapper.readTree(data);
 		} catch (IOException e) {
 			throw e;
 		}
 
-		final JsonNode contents = rootNode.get("contents");
-		final ObjectReader reader = new ObjectReader(resource, Options.from(options).build());
-		final EObject result = reader.from(contents);
+		final EObject result = mapper.readValue(rootNode.get("contents").traverse(), EObject.class);
 
 		if (result != null) {
 			resource.getContents().add(result);
-			reader.resolveEntries();
 		}
 	}
 

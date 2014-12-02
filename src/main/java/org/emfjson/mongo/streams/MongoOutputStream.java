@@ -7,8 +7,7 @@ import java.util.Map;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.URIConverter.Saveable;
-import org.emfjson.common.Options;
-import org.emfjson.jackson.map.ObjectWriter;
+import org.emfjson.jackson.module.EMFModule;
 import org.emfjson.mongo.MongoHelper;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -55,18 +54,18 @@ public class MongoOutputStream extends ByteArrayOutputStream implements Saveable
 	}
 
 	private String toJson(Resource resource) throws JsonProcessingException {
-		ObjectMapper jmapper = new ObjectMapper();
-		ObjectWriter writer = new ObjectWriter(jmapper, resource, Options.from(options).build());
-		JsonNode contents = writer.toNode();
+		final ObjectMapper mapper = new ObjectMapper();
+		mapper.registerModule(new EMFModule(options));
 
-		ObjectNode resourceNode = jmapper.createObjectNode();
-
+		final JsonNode contents = mapper.valueToTree(resource);
+		final ObjectNode resourceNode = mapper.createObjectNode();
 		final String id = uri.segment(2);
+
 		resourceNode.put("_id", id);
 		resourceNode.put("_type", "resource");
 		resourceNode.set("contents", contents);
 		
-		return jmapper.writeValueAsString(resourceNode);
+		return mapper.writeValueAsString(resourceNode);
 	}
 
 }
