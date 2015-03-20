@@ -1,25 +1,19 @@
 package org.emfjson.mongo.streams;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.*;
+import com.mongodb.util.JSON;
+import org.eclipse.emf.common.util.URI;
+import org.eclipse.emf.ecore.resource.Resource;
+import org.eclipse.emf.ecore.resource.URIConverter.Loadable;
+import org.emfjson.common.Options;
+import org.emfjson.jackson.streaming.StreamReader;
+import org.emfjson.mongo.MongoHelper;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
-
-import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.EObject;
-import org.eclipse.emf.ecore.resource.Resource;
-import org.eclipse.emf.ecore.resource.URIConverter.Loadable;
-import org.emfjson.jackson.module.EMFModule;
-import org.emfjson.mongo.MongoHelper;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
-import com.mongodb.DBCollection;
-import com.mongodb.DBCursor;
-import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
-import com.mongodb.util.JSON;
 
 public class MongoInputStream extends InputStream implements Loadable {
 
@@ -37,39 +31,29 @@ public class MongoInputStream extends InputStream implements Loadable {
 		final DB db = MongoHelper.getDB(client, uri);
 		final DBCollection collection = MongoHelper.getCollection(db, uri);
 
-		DBCursor cursor = collection.find(new BasicDBObject("_id", uri.segment(2)));
-
-		if (!resource.getContents().isEmpty()) {
+        if (!resource.getContents().isEmpty()) {
 			resource.getContents().clear();
 		}
 
-		try {
-			while (cursor.hasNext()) {
-				DBObject dbObject = cursor.next();
-				String data = JSON.serialize(dbObject);
+        try (DBCursor cursor = collection.find(new BasicDBObject("_id", uri.segment(2)))) {
+            while (cursor.hasNext()) {
+                DBObject dbObject = cursor.next();
+                String data = JSON.serialize(dbObject);
 
-				readJson(resource, data);
-			}
-		} finally {
-			cursor.close();
-		}
+                readJson(resource, data);
+            }
+        }
 	}
 
 	private void readJson(Resource resource, String data) throws IOException {
 		final ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new EMFModule(options));
-		ObjectNode rootNode = null;
-		try {
-			rootNode = (ObjectNode) mapper.readTree(data);
-		} catch (IOException e) {
-			throw e;
-		}
+        final JsonNode rootNode = mapper.readTree(data);
+        final JsonNode contents = rootNode.has("contents") ? rootNode.get("contents") : null;
 
-		final EObject result = mapper.readValue(rootNode.get("contents").traverse(), EObject.class);
-
-		if (result != null) {
-			resource.getContents().add(result);
-		}
+        if (contents != null) {
+            StreamReader reader = new StreamReader(Options.from(options).build());
+            reader.parse(resource, contents.traverse());
+        }
 	}
 
 	@Override
