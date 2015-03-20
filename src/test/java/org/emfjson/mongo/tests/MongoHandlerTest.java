@@ -45,7 +45,7 @@ public class MongoHandlerTest {
 		resource.save(null);
 	}
 
-//	@Test
+	@Test
 	public void testLoad() throws IOException {
 		Resource resource = resourceSet.createResource(
 				URI.createURI("mongodb://localhost:27017/emfjson-test/models/model1"));
@@ -83,7 +83,7 @@ public class MongoHandlerTest {
 		resource.save(null);
 	}
 
-//	@Test
+	@Test
 	public void testLoadWithUriMapping() throws IOException {
 		resourceSet.getURIConverter().getURIMap().put(
 				URI.createURI("http://resources/"), 

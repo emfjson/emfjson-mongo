@@ -80,7 +80,6 @@ public class UseIdTest {
 		MongoClient client = getClient(resource.getURI());
 		DBCollection collection = getCollection(getDB(client, resource.getURI()), resource.getURI());
 
-
 		DBObject pObject = collection.findOne(new BasicDBObject("_id", "model-test-uuid-1"));
 
 		assertNotNull(pObject);
