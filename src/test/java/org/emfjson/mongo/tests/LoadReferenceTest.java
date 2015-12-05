@@ -116,12 +116,12 @@ public class LoadReferenceTest {
 				.set("contents", mapper.createObjectNode()
 						.put("eClass", uri(ModelPackage.Literals.TEST_A))
 						.set("manyBs", mapper.createArrayNode()
-							.add(mapper.createObjectNode()
-								.put("eClass", uri(ModelPackage.Literals.TEST_B))
-								.put("_ref", "mongodb://localhost:27017/test/models/c2#/"))
-							.add(mapper.createObjectNode()
-									.put("eClass", uri(ModelPackage.Literals.TEST_B))
-									.put("_ref", "mongodb://localhost:27017/test/models/c3#/"))));
+								.add(mapper.createObjectNode()
+										.put("eClass", uri(ModelPackage.Literals.TEST_B))
+										.put("_ref", "mongodb://localhost:27017/test/models/c2#/"))
+								.add(mapper.createObjectNode()
+										.put("eClass", uri(ModelPackage.Literals.TEST_B))
+										.put("_ref", "mongodb://localhost:27017/test/models/c3#/"))));
 
 		JsonNode content_c2 = mapper.createObjectNode()
 				.put("_id", "c2")

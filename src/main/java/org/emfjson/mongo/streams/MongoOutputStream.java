@@ -19,51 +19,51 @@ import java.util.Map;
 
 public class MongoOutputStream extends ByteArrayOutputStream implements Saveable {
 
-    private final Map<?, ?> options;
-    private final URI uri;
+	private final Map<?, ?> options;
+	private final URI uri;
 	private final MongoHandler handler;
 
 	public MongoOutputStream(MongoHandler handler, URI uri, Map<?, ?> options) {
 		this.handler = handler;
-        this.uri = uri;
-        this.options = options;
-    }
+		this.uri = uri;
+		this.options = options;
+	}
 
-    @Override
-    public void saveResource(Resource resource) throws IOException {
-        if (uri == null) {
-            throw new IOException();
-        }
+	@Override
+	public void saveResource(Resource resource) throws IOException {
+		if (uri == null) {
+			throw new IOException();
+		}
 
-        final MongoCollection<Document> collection = handler.getCollection(uri);
-        final String data = toJson(resource);
+		final MongoCollection<Document> collection = handler.getCollection(uri);
+		final String data = toJson(resource);
 
-        if (data == null) {
-            throw new IOException("Error during saving");
-        }
+		if (data == null) {
+			throw new IOException("Error during saving");
+		}
 
-        final Document filter = new Document("_id", uri.segment(2));
+		final Document filter = new Document("_id", uri.segment(2));
 		if (collection.find(filter).limit(1).first() == null) {
 			collection.insertOne(Document.parse(data));
 		} else {
 			collection.findOneAndReplace(filter, Document.parse(data));
 		}
-    }
+	}
 
-    private String toJson(Resource resource) throws JsonProcessingException {
-        final ObjectMapper mapper = new ObjectMapper();
+	private String toJson(Resource resource) throws JsonProcessingException {
+		final ObjectMapper mapper = new ObjectMapper();
 		final JacksonOptions jacksonOptions = JacksonOptions.from(options);
 		mapper.registerModule(new EMFModule(resource.getResourceSet(), jacksonOptions));
 
-        final JsonNode contents = mapper.valueToTree(resource);
-        final ObjectNode resourceNode = mapper.createObjectNode();
-        final String id = uri.segment(2);
+		final JsonNode contents = mapper.valueToTree(resource);
+		final ObjectNode resourceNode = mapper.createObjectNode();
+		final String id = uri.segment(2);
 
-        resourceNode.put("_id", id);
-        resourceNode.put("_type", "resource");
-        resourceNode.set("contents", contents);
+		resourceNode.put("_id", id);
+		resourceNode.put("_type", "resource");
+		resourceNode.set("contents", contents);
 
-        return mapper.writeValueAsString(resourceNode);
-    }
+		return mapper.writeValueAsString(resourceNode);
+	}
 
 }

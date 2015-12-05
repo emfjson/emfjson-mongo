@@ -22,20 +22,20 @@ public class MongoHandler extends URIHandlerImpl {
 		this.client = client;
 	}
 
-    @Override
-    public boolean canHandle(URI uri) {
-        return uri.scheme().equals("mongodb");
-    }
+	@Override
+	public boolean canHandle(URI uri) {
+		return uri.scheme().equals("mongodb");
+	}
 
-    @Override
-    public InputStream createInputStream(URI uri, Map<?, ?> options) throws IOException {
-        return new MongoInputStream(this, uri, options);
-    }
+	@Override
+	public InputStream createInputStream(URI uri, Map<?, ?> options) throws IOException {
+		return new MongoInputStream(this, uri, options);
+	}
 
-    @Override
-    public OutputStream createOutputStream(URI uri, Map<?, ?> options) throws IOException {
-        return new MongoOutputStream(this, uri, options);
-    }
+	@Override
+	public OutputStream createOutputStream(URI uri, Map<?, ?> options) throws IOException {
+		return new MongoOutputStream(this, uri, options);
+	}
 
 	@Override
 	public void delete(URI uri, Map<?, ?> options) throws IOException {

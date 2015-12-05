@@ -12,7 +12,7 @@ import org.junit.runners.Suite;
 		MongoHandlerSaveTest.class,
 		MongoHandlerLoadTest.class,
 		UseIdTest.class,
-        DynamicTest.class
+		DynamicTest.class
 })
 public class TestSuite {
 }

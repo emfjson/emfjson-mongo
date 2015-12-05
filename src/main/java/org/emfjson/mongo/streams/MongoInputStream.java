@@ -17,58 +17,59 @@ import java.util.Map;
 
 public class MongoInputStream extends InputStream implements Loadable {
 
-    private final Map<?, ?> options;
-    private final URI uri;
+	private final Map<?, ?> options;
+	private final URI uri;
 	private MongoHandler handler;
 
-	public MongoInputStream(MongoHandler handler, URI uri, Map<?, ?> options) {;
-        this.uri = uri;
-        this.options = options;
+	public MongoInputStream(MongoHandler handler, URI uri, Map<?, ?> options) {
+		;
+		this.uri = uri;
+		this.options = options;
 		this.handler = handler;
-    }
+	}
 
-    @Override
-    public void loadResource(Resource resource) throws IOException {
-        final MongoCollection<Document> collection = handler.getCollection(uri);
+	@Override
+	public void loadResource(Resource resource) throws IOException {
+		final MongoCollection<Document> collection = handler.getCollection(uri);
 
-        if (!resource.getContents().isEmpty()) {
-            resource.getContents().clear();
-        }
+		if (!resource.getContents().isEmpty()) {
+			resource.getContents().clear();
+		}
 
-        final String id = uri.segment(2);
+		final String id = uri.segment(2);
 		final Document filter = new Document("_id", id);
-        final Document document = collection
+		final Document document = collection
 				.find(filter)
 				.limit(1)
 				.first();
 
-        if (document == null) {
-            throw new IOException("Cannot find document with _id " + id);
-        }
+		if (document == null) {
+			throw new IOException("Cannot find document with _id " + id);
+		}
 
-        readJson(resource, document.toJson());
-    }
+		readJson(resource, document.toJson());
+	}
 
-    private void readJson(Resource resource, String data) throws IOException {
-        final ObjectMapper mapper = new ObjectMapper();
+	private void readJson(Resource resource, String data) throws IOException {
+		final ObjectMapper mapper = new ObjectMapper();
 
 		final JacksonOptions jacksonOptions = JacksonOptions.from(options);
 		final EMFModule module = new EMFModule(resource.getResourceSet(), jacksonOptions);
-        mapper.registerModule(module);
+		mapper.registerModule(module);
 
-        final JsonNode rootNode = mapper.readTree(data);
-        final JsonNode contents = rootNode.has("contents") ? rootNode.get("contents") : null;
+		final JsonNode rootNode = mapper.readTree(data);
+		final JsonNode contents = rootNode.has("contents") ? rootNode.get("contents") : null;
 
-        if (contents != null) {
-            mapper.reader()
+		if (contents != null) {
+			mapper.reader()
 					.withAttribute("resource", resource)
 					.treeToValue(contents, Resource.class);
-        }
-    }
+		}
+	}
 
-    @Override
-    public int read() throws IOException {
-        return 0;
-    }
+	@Override
+	public int read() throws IOException {
+		return 0;
+	}
 
 }
