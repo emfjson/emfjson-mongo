@@ -2,17 +2,14 @@ package org.emfjson.mongo.streams;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.BasicDBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.URIConverter.Loadable;
 import org.emfjson.jackson.JacksonOptions;
 import org.emfjson.jackson.module.EMFModule;
-import org.emfjson.mongo.MongoHelper;
+import org.emfjson.mongo.MongoHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -22,25 +19,28 @@ public class MongoInputStream extends InputStream implements Loadable {
 
     private final Map<?, ?> options;
     private final URI uri;
+	private MongoHandler handler;
 
-    public MongoInputStream(URI uri, Map<?, ?> options) {
+	public MongoInputStream(MongoHandler handler, URI uri, Map<?, ?> options) {;
         this.uri = uri;
         this.options = options;
+		this.handler = handler;
     }
 
     @Override
     public void loadResource(Resource resource) throws IOException {
-        final MongoClient client = MongoHelper.getClient(uri);
-        final MongoDatabase db = MongoHelper.getDB(client, uri);
-        final MongoCollection<Document> collection = MongoHelper.getCollection(db, uri);
+        final MongoCollection<Document> collection = handler.getCollection(uri);
 
         if (!resource.getContents().isEmpty()) {
             resource.getContents().clear();
         }
 
         final String id = uri.segment(2);
-        final BasicDBObject filter = new BasicDBObject("_id", id);
-        final Document document = collection.find(filter).first();
+		final Document filter = new Document("_id", id);
+        final Document document = collection
+				.find(filter)
+				.limit(1)
+				.first();
 
         if (document == null) {
             throw new IOException("Cannot find document with _id " + id);

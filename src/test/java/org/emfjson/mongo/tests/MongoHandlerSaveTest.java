@@ -3,9 +3,7 @@ package org.emfjson.mongo.tests;
 import com.mongodb.BasicDBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
-import org.bson.types.ObjectId;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EClass;
 import org.eclipse.emf.ecore.EPackage;
@@ -16,7 +14,6 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.emfjson.jackson.resource.JsonResourceFactory;
 import org.emfjson.mongo.MongoHandler;
-import org.emfjson.mongo.MongoHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,32 +21,29 @@ import org.junit.Test;
 import java.io.IOException;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public class MongoHandlerSaveTest {
 
 	private ResourceSet resourceSet;
 	private MongoClient client;
+	private MongoHandler handler;
 	private URI testURI = URI.createURI("mongodb://localhost:27017/emfjson-test/models/model1");
 
 	@Before
 	public void setUp() {
+		client = new MongoClient();
+		handler = new MongoHandler(client);
 		resourceSet = new ResourceSetImpl();
 
 		resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
 		resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("*", new JsonResourceFactory());
-		resourceSet.getURIConverter().getURIHandlers().add(0, new MongoHandler());
-
-		client = MongoHelper.getClient(testURI);
+		resourceSet.getURIConverter().getURIHandlers().add(0, handler);
 	}
 
 	@After
 	public void tearDown() {
-		MongoHelper
-				.getDB(client, testURI)
-				.drop();
+		client.getDatabase("emfjson-test").drop();
 	}
 
 	@Test
@@ -89,8 +83,7 @@ public class MongoHandlerSaveTest {
 	}
 
 	private void checkDocument(URI uri) {
-		MongoDatabase db = MongoHelper.getDB(client, uri);
-		MongoCollection<Document> collection = MongoHelper.getCollection(db, uri);
+		MongoCollection<Document> collection = handler.getCollection(uri);
 
 		assertNotNull(collection);
 

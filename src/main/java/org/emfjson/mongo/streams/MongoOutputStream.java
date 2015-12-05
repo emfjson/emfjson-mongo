@@ -4,17 +4,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.mongodb.BasicDBObject;
-import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import org.bson.Document;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.URIConverter.Saveable;
 import org.emfjson.jackson.JacksonOptions;
 import org.emfjson.jackson.module.EMFModule;
-import org.emfjson.mongo.MongoHelper;
+import org.emfjson.mongo.MongoHandler;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -24,8 +21,10 @@ public class MongoOutputStream extends ByteArrayOutputStream implements Saveable
 
     private final Map<?, ?> options;
     private final URI uri;
+	private final MongoHandler handler;
 
-    public MongoOutputStream(URI uri, Map<?, ?> options) {
+	public MongoOutputStream(MongoHandler handler, URI uri, Map<?, ?> options) {
+		this.handler = handler;
         this.uri = uri;
         this.options = options;
     }
@@ -36,18 +35,19 @@ public class MongoOutputStream extends ByteArrayOutputStream implements Saveable
             throw new IOException();
         }
 
-        final MongoClient client = MongoHelper.getClient(uri);
-        final MongoDatabase db = MongoHelper.getDB(client, uri);
-        final MongoCollection<Document> collection = MongoHelper.getCollection(db, uri);
+        final MongoCollection<Document> collection = handler.getCollection(uri);
         final String data = toJson(resource);
 
         if (data == null) {
             throw new IOException("Error during saving");
         }
 
-        final BasicDBObject filter = new BasicDBObject("_id", uri.segment(2));
-        collection.findOneAndDelete(filter);
-        collection.insertOne(Document.parse(data));
+        final Document filter = new Document("_id", uri.segment(2));
+		if (collection.find(filter).limit(1).first() == null) {
+			collection.insertOne(Document.parse(data));
+		} else {
+			collection.findOneAndReplace(filter, Document.parse(data));
+		}
     }
 
     private String toJson(Resource resource) throws JsonProcessingException {

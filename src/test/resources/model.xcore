@@ -1,0 +1,31 @@
+@GenModel(
+    bundleManifest="false",
+    modelDirectory="emfjson-mongo/src/test/java-gen",
+    rootExtendsClass="org.eclipse.emf.ecore.impl.MinimalEObjectImpl",
+    complianceLevel="7.0"
+)
+package org.emfjson.model
+
+class TestA {
+	String stringValue
+	String[*] multiStringValues
+	Integer intValue
+	Integer[*] multiIntValues
+	Boolean booleanValue
+	Boolean[*] multiBooleanValues
+	TestKind kind
+	TestKind[*] multiKinds
+
+	refers TestB oneB
+	refers TestB[*] manyBs
+	contains TestB containB
+	contains TestB[*] containBs
+}
+
+class TestB extends TestA {}
+
+enum TestKind {
+	one = 0,
+	two as "Two" = 1,
+	three as "Three-is-Three" = 2
+}

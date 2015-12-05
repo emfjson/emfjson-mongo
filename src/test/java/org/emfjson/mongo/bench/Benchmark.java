@@ -1,20 +1,22 @@
 package org.emfjson.mongo.bench;
 
+import com.mongodb.MongoClient;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.emfjson.EMFJs;
-import org.emfjson.couchemf.tests.model.ANode;
-import org.emfjson.couchemf.tests.model.BNode;
-import org.emfjson.couchemf.tests.model.ModelFactory;
-import org.emfjson.couchemf.tests.model.Node;
 import org.emfjson.jackson.resource.JsonResourceFactory;
+import org.emfjson.model.ModelFactory;
+import org.emfjson.model.TestA;
+import org.emfjson.model.TestB;
 import org.emfjson.mongo.MongoHandler;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Benchmark {
@@ -22,24 +24,24 @@ public class Benchmark {
     static URI mongoURI = URI.createURI("mongodb://localhost:27017/emfjson-test/bench");
     static long times = 20;
 
-    static EObject createModel() {
-        Node node = ModelFactory.eINSTANCE.createNode();
-        node.setLabel("root");
-        node.setValue("root");
+    static List<EObject> createModel() {
+		List<EObject> contents = new ArrayList<>();
 
         for (int i = 0; i < 500; i++) {
-            ANode a = ModelFactory.eINSTANCE.createANode();
-            node.getNodes().add(a);
-            a.setLabel("A" + i);
+
+			TestA a = ModelFactory.eINSTANCE.createTestA();
+			a.setStringValue("A" + i);
+			contents.add(a);
 
             for (int j = 0; j < 200; j++) {
-                BNode b = ModelFactory.eINSTANCE.createBNode();
-                a.getNodes().add(b);
-                b.setLabel("B" + i);
+
+				TestB b = ModelFactory.eINSTANCE.createTestB();
+                b.setStringValue("B" + i + "-" + j);
+				a.getContainBs().add(b);
             }
         }
 
-        return node;
+        return contents;
     }
 
     static long performSave(Resource resource, Map<String, Object> options) {
@@ -53,25 +55,26 @@ public class Benchmark {
     }
 
     public static void main(String[] args) {
-        long sum = 0;
+		long sum = 0;
         Map<String, Object> options = new HashMap<>();
         options.put(EMFJs.OPTION_INDENT_OUTPUT, false);
-        options.put(EMFJs.OPTION_SERIALIZE_REF_TYPE, false);
-        options.put(EMFJs.OPTION_SERIALIZE_TYPE, false);
+
+		final MongoClient client = new MongoClient();
+
         for (int i = 0; i < times; i++) {
             ResourceSet resourceSet = new ResourceSetImpl();
             resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("*", new JsonResourceFactory());
-            resourceSet.getURIConverter().getURIHandlers().add(0, new MongoHandler());
+            resourceSet.getURIConverter().getURIHandlers().add(0, new MongoHandler(client));
 
             Resource resource = resourceSet.createResource(mongoURI.appendSegment("test"));
-            resource.getContents().add(createModel());
+            resource.getContents().addAll(createModel());
 
-            long cur;
-            sum += cur = performSave(resource, options);
-            System.out.println("JSON: " + cur / 1000.);
+            sum += performSave(resource, options);
         }
+
         long average = sum / times;
-        System.out.println("JSON: " + average / 1000.);
+
+        System.out.println("Average time for storing " + (500 * 200) + " elements: " + average / 1000. + " seconds.");
     }
 
 }

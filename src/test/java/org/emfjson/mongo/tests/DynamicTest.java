@@ -1,7 +1,6 @@
 package org.emfjson.mongo.tests;
 
 import com.mongodb.MongoClient;
-import com.mongodb.client.MongoDatabase;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.*;
 import org.eclipse.emf.ecore.resource.Resource;
@@ -11,7 +10,6 @@ import org.eclipse.emf.ecore.util.EcoreUtil;
 import org.emfjson.EMFJs;
 import org.emfjson.jackson.resource.JsonResourceFactory;
 import org.emfjson.mongo.MongoHandler;
-import org.emfjson.mongo.MongoHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +25,6 @@ public class DynamicTest {
 
     private ResourceSetImpl resourceSet;
 	private MongoClient client;
-	private MongoDatabase db;
 
 	private Map<String, Object> options = new HashMap<>();
 	{
@@ -39,10 +36,13 @@ public class DynamicTest {
 
     @Before
     public void setUp() throws IOException {
-        resourceSet = new ResourceSetImpl();
+		client = new MongoClient();
+
+		MongoHandler handler = new MongoHandler(client);
+		resourceSet = new ResourceSetImpl();
         resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
         resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("*", new JsonResourceFactory());
-        resourceSet.getURIConverter().getURIHandlers().add(0, new MongoHandler());
+        resourceSet.getURIConverter().getURIHandlers().add(0, handler);
 		resourceSet.getLoadOptions().putAll(options);
 
         resourceSet.getURIConverter().getURIMap().put(
@@ -51,15 +51,13 @@ public class DynamicTest {
         resourceSet.getURIConverter().getURIMap().put(
 				URI.createURI("http://test/foo-model"), testURI2);
 
-		client = MongoHelper.getClient(testURI1);
-		db = MongoHelper.getDB(client, testURI1);
 		createModel(createPackage(resourceSet), resourceSet);
         resourceSet.getResources().clear();
     }
 
 	@After
 	public void tearDown() {
-		db.drop();
+		client.getDatabase("emfjson-test").drop();
 	}
 
     @Test

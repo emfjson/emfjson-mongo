@@ -16,7 +16,6 @@ import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.emfjson.jackson.resource.JsonResourceFactory;
 import org.emfjson.mongo.MongoHandler;
-import org.emfjson.mongo.MongoHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,15 +32,16 @@ public class MongoHandlerLoadTest {
 
 	@Before
     public void setUp() throws JsonProcessingException {
-        resourceSet = new ResourceSetImpl();
+		client = new MongoClient();
 
-        resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
+		MongoHandler handler = new MongoHandler(client);
+		resourceSet = new ResourceSetImpl();
+
+		resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
         resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("*", new JsonResourceFactory());
-        resourceSet.getURIConverter().getURIHandlers().add(0, new MongoHandler());
+        resourceSet.getURIConverter().getURIHandlers().add(0, handler);
 
-		client = MongoHelper.getClient(testURI);
-
-		MongoCollection<Document> collection = MongoHelper.getCollection(MongoHelper.getDB(client, testURI), testURI);
+		MongoCollection<Document> collection = handler.getCollection(testURI);
 
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode content = mapper.createObjectNode()
@@ -61,9 +61,7 @@ public class MongoHandlerLoadTest {
 
 	@After
 	public void tearDown() {
-		MongoHelper
-				.getDB(client, testURI)
-				.drop();
+		client.getDatabase("emfjson-test").drop();
 	}
 
     @Test

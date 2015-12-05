@@ -1,8 +1,5 @@
 package org.emfjson.mongo.tests;
 
-import com.mongodb.BasicDBList;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBObject;
 import com.mongodb.MongoClient;
 import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
@@ -16,26 +13,33 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
+import org.emfjson.EMFJs;
 import org.emfjson.jackson.resource.JsonResource;
 import org.emfjson.jackson.resource.JsonResourceFactory;
 import org.emfjson.mongo.MongoHandler;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
-import static org.emfjson.mongo.MongoHelper.*;
 import static org.junit.Assert.*;
 
 public class UseIdTest {
 
-    ResourceSet resourceSet;
+    private ResourceSet resourceSet;
+	private MongoHandler handler;
+	private MongoClient client;
 
-    @Before
+	@Before
     public void setUp() {
+		client = new MongoClient();
+		handler = new MongoHandler(client);
         resourceSet = new ResourceSetImpl();
+
         resourceSet.getPackageRegistry().put(EcorePackage.eNS_URI, EcorePackage.eINSTANCE);
         resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("*", new JsonResourceFactory() {
             @Override
@@ -48,11 +52,17 @@ public class UseIdTest {
                 };
             }
         });
-        resourceSet.getURIConverter().getURIHandlers().add(0, new MongoHandler());
+        resourceSet.getURIConverter().getURIHandlers().add(0, handler);
     }
+
+	@After
+	public void tearDown() {
+		client.getDatabase("emfjson-test").drop();
+	}
 
     private Map<?, ?> getOptions() {
         Map<String, Object> options = new HashMap<>();
+		options.put(EMFJs.OPTION_USE_ID, true);
         return options;
     }
 
@@ -74,10 +84,8 @@ public class UseIdTest {
 
         resource.save(getOptions());
 
-        MongoClient client = getClient(resource.getURI());
-        MongoCollection<Document> collection = getCollection(getDB(client, resource.getURI()), resource.getURI());
-
-        FindIterable<Document> objects = collection.find(new BasicDBObject("_id", "model-test-uuid-1"));
+        MongoCollection<Document> collection = handler.getCollection(resource.getURI());
+        FindIterable<Document> objects = collection.find(new Document("_id", "model-test-uuid-1"));
 
         assertNotNull(objects);
 
@@ -85,14 +93,15 @@ public class UseIdTest {
 
         Document contents = (Document) document.get("contents");
         assertNotNull(contents);
-        assertTrue(contents.containsKey("_id"));
+
+		assertTrue(contents.containsKey("_id"));
         assertEquals(pId, contents.get("_id"));
 
-        BasicDBList eClassifiers = (BasicDBList) contents.get("eClassifiers");
+        List eClassifiers = (List) contents.get("eClassifiers");
         assertEquals(1, eClassifiers.size());
 
-        DBObject cObject = (DBObject) eClassifiers.get(0);
-        assertTrue(cObject.containsField("_id"));
+        Document cObject = (Document) eClassifiers.get(0);
+        assertTrue(cObject.containsKey("_id"));
         assertEquals(cId, cObject.get("_id"));
     }
 
