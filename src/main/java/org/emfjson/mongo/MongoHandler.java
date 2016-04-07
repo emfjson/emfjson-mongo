@@ -17,6 +17,11 @@ import java.util.Map;
 public class MongoHandler extends URIHandlerImpl {
 
 	private final MongoClient client;
+	public static final String ID_FIELD = "_id";
+	public static final String TYPE_FIELD = "_type";
+	public static final String CONTENTS_FIELD = "contents";
+	
+	
 
 	public MongoHandler(MongoClient client) {
 		this.client = client;
@@ -41,8 +46,8 @@ public class MongoHandler extends URIHandlerImpl {
 	public void delete(URI uri, Map<?, ?> options) throws IOException {
 		final MongoCollection<Document> collection = getCollection(uri);
 		final Map<String, Object> filter = new HashMap<>();
-		filter.put("_id", uri.segment(2));
-		filter.put("type", "resource");
+		filter.put(ID_FIELD, uri.segment(2));
+		filter.put(TYPE_FIELD, "resource");
 
 		collection.findOneAndDelete(new Document(filter));
 	}
@@ -51,8 +56,8 @@ public class MongoHandler extends URIHandlerImpl {
 	public boolean exists(URI uri, Map<?, ?> options) {
 		final MongoCollection<Document> collection = getCollection(uri);
 		final Map<String, Object> filter = new HashMap<>();
-		filter.put("_id", uri.segment(2));
-		filter.put("type", "resource");
+		filter.put(ID_FIELD, uri.segment(2));
+		filter.put(TYPE_FIELD, "resource");
 
 		return collection.find(new Document(filter)).limit(1).first() != null;
 	}
