@@ -42,7 +42,7 @@ public class MongoOutputStream extends ByteArrayOutputStream implements Saveable
 			throw new IOException("Error during saving");
 		}
 
-		final Document filter = new Document("_id", uri.segment(2));
+		final Document filter = new Document(MongoHandler.ID_FIELD, uri.segment(2));
 		if (collection.find(filter).limit(1).first() == null) {
 			collection.insertOne(Document.parse(data));
 		} else {
@@ -59,9 +59,9 @@ public class MongoOutputStream extends ByteArrayOutputStream implements Saveable
 		final ObjectNode resourceNode = mapper.createObjectNode();
 		final String id = uri.segment(2);
 
-		resourceNode.put("_id", id);
-		resourceNode.put("_type", "resource");
-		resourceNode.set("contents", contents);
+		resourceNode.put(MongoHandler.ID_FIELD, id);
+		resourceNode.put(MongoHandler.TYPE_FIELD, "resource");
+		resourceNode.set(MongoHandler.CONTENTS_FIELD, contents);
 
 		return mapper.writeValueAsString(resourceNode);
 	}
