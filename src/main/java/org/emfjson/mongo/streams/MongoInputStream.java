@@ -1,19 +1,24 @@
 package org.emfjson.mongo.streams;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.client.MongoCollection;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.util.Map;
+
 import org.bson.Document;
+import org.bson.codecs.DocumentCodec;
+import org.bson.codecs.EncoderContext;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.URIConverter.Loadable;
 import org.emfjson.jackson.JacksonOptions;
 import org.emfjson.jackson.module.EMFModule;
 import org.emfjson.mongo.MongoHandler;
+import org.emfjson.mongo.bson.codecs.JsonWriter;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Map;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.MongoCollection;
 
 public class MongoInputStream extends InputStream implements Loadable {
 
@@ -47,7 +52,9 @@ public class MongoInputStream extends InputStream implements Loadable {
 			throw new IOException("Cannot find document with _id " + id);
 		}
 
-		readJson(resource, document.toJson());
+		JsonWriter writer = new JsonWriter(new StringWriter());
+		new DocumentCodec().encode(writer, document, EncoderContext.builder().isEncodingCollectibleDocument(true).build());
+		readJson(resource, writer.getWriter().toString());
 	}
 
 	private void readJson(Resource resource, String data) throws IOException {

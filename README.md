@@ -33,6 +33,15 @@ resourceSet.getURIConverter().getURIMap().put(
 Resource resource = resourceSet.createResource(URI.createURI("http://resources/model1"));
 ```
 
+Override the name of the field to avoid problem with the reserved name of Bson. And set the uri handler, to avoid problem with external resources.
+
+```java
+	HashMap<String, Object> DEFAULT_OPTIONS = new HashMap<String, Object>();
+	DEFAULT_OPTIONS.put(EMFJs.OPTION_URI_HANDLER, new IdentityURIHandler());
+	DEFAULT_OPTIONS.put(EMFJs.OPTION_REF_FIELD, "_ref");
+	resourceSet.getLoadOptions().putAll(DEFAULT_OPTIONS);
+```
+
 Saving documents
 
 ```java
