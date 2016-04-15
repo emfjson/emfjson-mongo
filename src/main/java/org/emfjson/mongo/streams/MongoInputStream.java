@@ -40,14 +40,14 @@ public class MongoInputStream extends InputStream implements Loadable {
 		}
 
 		final String id = uri.segment(2);
-		final Document filter = new Document("_id", id);
+		final Document filter = new Document(MongoHandler.ID_FIELD, id);
 		final Document document = collection
 				.find(filter)
 				.limit(1)
 				.first();
 
 		if (document == null) {
-			throw new IOException("Cannot find document with _id " + id);
+			throw new IOException("Cannot find document with " + MongoHandler.ID_FIELD + " " + id);
 		}
 
 		JsonWriter writer = new JsonWriter(new StringWriter());
@@ -68,7 +68,9 @@ public class MongoInputStream extends InputStream implements Loadable {
 		mapper.registerModule(module);
 
 		final JsonNode rootNode = mapper.readTree(data);
-		final JsonNode contents = rootNode.has("contents") ? rootNode.get("contents"): null;
+		final JsonNode contents = rootNode.has(MongoHandler.CONTENTS_FIELD) ?
+				rootNode.get(MongoHandler.CONTENTS_FIELD):
+				null;
 
 		if (contents != null) {
 			mapper.reader()
