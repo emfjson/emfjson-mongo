@@ -1,10 +1,8 @@
 package org.emfjson.mongo.streams;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.util.Map;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import org.bson.codecs.DocumentCodec;
 import org.bson.codecs.EncoderContext;
@@ -16,9 +14,10 @@ import org.emfjson.jackson.module.EMFModule;
 import org.emfjson.mongo.MongoHandler;
 import org.emfjson.mongo.bson.codecs.JsonWriter;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.client.MongoCollection;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.util.Map;
 
 public class MongoInputStream extends InputStream implements Loadable {
 
@@ -27,7 +26,6 @@ public class MongoInputStream extends InputStream implements Loadable {
 	private MongoHandler handler;
 
 	public MongoInputStream(MongoHandler handler, URI uri, Map<?, ?> options) {
-		;
 		this.uri = uri;
 		this.options = options;
 		this.handler = handler;
@@ -53,7 +51,12 @@ public class MongoInputStream extends InputStream implements Loadable {
 		}
 
 		JsonWriter writer = new JsonWriter(new StringWriter());
-		new DocumentCodec().encode(writer, document, EncoderContext.builder().isEncodingCollectibleDocument(true).build());
+		new DocumentCodec().encode(writer,
+				document,
+				EncoderContext
+						.builder()
+						.isEncodingCollectibleDocument(true)
+						.build());
 		readJson(resource, writer.getWriter().toString());
 	}
 
@@ -65,7 +68,7 @@ public class MongoInputStream extends InputStream implements Loadable {
 		mapper.registerModule(module);
 
 		final JsonNode rootNode = mapper.readTree(data);
-		final JsonNode contents = rootNode.has("contents") ? rootNode.get("contents") : null;
+		final JsonNode contents = rootNode.has("contents") ? rootNode.get("contents"): null;
 
 		if (contents != null) {
 			mapper.reader()

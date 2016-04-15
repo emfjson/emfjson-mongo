@@ -1,9 +1,6 @@
 package org.emfjson.mongo;
 
-import org.emfjson.mongo.tests.DynamicTest;
-import org.emfjson.mongo.tests.MongoHandlerLoadTest;
-import org.emfjson.mongo.tests.MongoHandlerSaveTest;
-import org.emfjson.mongo.tests.UseIdTest;
+import org.emfjson.mongo.tests.*;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
@@ -11,6 +8,8 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
 		MongoHandlerSaveTest.class,
 		MongoHandlerLoadTest.class,
+		LoadReferenceTest.class,
+		MongoHandlerSaveAndLoadTest.class,
 		UseIdTest.class,
 		DynamicTest.class
 })

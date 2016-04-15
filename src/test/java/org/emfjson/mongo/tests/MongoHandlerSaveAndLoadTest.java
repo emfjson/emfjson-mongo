@@ -1,9 +1,9 @@
 package org.emfjson.mongo.tests;
 
-import static org.junit.Assert.assertEquals;
-
-import java.io.IOException;
-
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EcorePackage;
@@ -19,10 +19,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.MongoClient;
-import com.mongodb.client.MongoCollection;
+import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
 
 public class MongoHandlerSaveAndLoadTest {
 
@@ -50,7 +49,7 @@ public class MongoHandlerSaveAndLoadTest {
 	@Test
 	public void testSaveThenLoadNode() throws IOException {
 		MongoCollection<Document> models = handler.getCollection(testURI);
-		
+
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode content_model1 = mapper.createObjectNode()
 				.put("_id", "model1")
@@ -61,10 +60,10 @@ public class MongoHandlerSaveAndLoadTest {
 						.put("intValue", 1234)
 						.put("booleanValue", true)
 						.put("longValue", 12345678900L));
-		
-		
+
+
 		models.insertOne(Document.parse(mapper.writeValueAsString(content_model1)));
-		
+
 		Resource resource = resourceSet.createResource(testURI);
 		resource.load(null);
 
@@ -75,7 +74,7 @@ public class MongoHandlerSaveAndLoadTest {
 
 		assertEquals("testStringValue", ta.getStringValue());
 		assertEquals(1234, ta.getIntValue().intValue());
-		assertEquals(true, ta.getBooleanValue().booleanValue());
+		assertEquals(true, ta.getBooleanValue());
 		assertEquals(12345678900L, ta.getLongValue().longValue());
 	}
 

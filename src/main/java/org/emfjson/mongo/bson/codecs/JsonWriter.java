@@ -1,19 +1,14 @@
 package org.emfjson.mongo.bson.codecs;
 
-import static javax.xml.bind.DatatypeConverter.printBase64Binary;
+import org.bson.*;
+import org.bson.json.JsonMode;
+import org.bson.json.JsonWriterSettings;
+import org.bson.types.ObjectId;
 
 import java.io.IOException;
 import java.io.Writer;
 
-import org.bson.BSONException;
-import org.bson.BsonBinary;
-import org.bson.BsonContextType;
-import org.bson.BsonDbPointer;
-import org.bson.BsonRegularExpression;
-import org.bson.BsonTimestamp;
-import org.bson.json.JsonMode;
-import org.bson.json.JsonWriterSettings;
-import org.bson.types.ObjectId;
+import static javax.xml.bind.DatatypeConverter.printBase64Binary;
 
 public class JsonWriter extends org.bson.json.JsonWriter {
 
@@ -26,7 +21,7 @@ public class JsonWriter extends org.bson.json.JsonWriter {
 	public JsonWriter(final Writer writer, final JsonWriterSettings settings) {
 		super(writer, settings);
 		this.settings = settings;
-		if(settings.getOutputMode().equals(JsonMode.SHELL))
+		if (settings.getOutputMode().equals(JsonMode.SHELL))
 			throw new IllegalArgumentException("JsonMode must not be SHELL");
 		setContext(new Context(null, BsonContextType.TOP_LEVEL, ""));
 	}
@@ -70,7 +65,7 @@ public class JsonWriter extends org.bson.json.JsonWriter {
 	public void doWriteBoolean(final boolean value) {
 		try {
 			writeNameHelper(getName());
-			getWriter().write(value ? "true" : "false");
+			getWriter().write(value ? "true": "false");
 		} catch (IOException e) {
 			throwBSONException(e);
 		}
@@ -204,12 +199,12 @@ public class JsonWriter extends org.bson.json.JsonWriter {
 
 	@Override
 	public void doWriteTimestamp(final BsonTimestamp value) {
-			writeStartDocument();
-			writeStartDocument("$timestamp");
-			writeInt32("t", value.getTime());
-			writeInt32("i", value.getInc());
-			writeEndDocument();
-			writeEndDocument();
+		writeStartDocument();
+		writeStartDocument("$timestamp");
+		writeInt32("t", value.getTime());
+		writeInt32("i", value.getInc());
+		writeEndDocument();
+		writeEndDocument();
 	}
 
 	@Override
@@ -228,30 +223,30 @@ public class JsonWriter extends org.bson.json.JsonWriter {
 
 	private void writeNameHelper(final String name) throws IOException {
 		switch (getContext().getContextType()) {
-		case ARRAY:
-			// don't write Array element names in JSON
-			if (getContext().hasElements()) {
-				getWriter().write(", ");
-			}
-			break;
-		case DOCUMENT:
-		case SCOPE_DOCUMENT:
-			if (getContext().hasElements()) {
-				getWriter().write(",");
-			}
-			if (settings.isIndent()) {
-				getWriter().write(settings.getNewLineCharacters());
-				getWriter().write(getContext().getIndentation());
-			} else {
-				getWriter().write(" ");
-			}
-			writeStringHelper(name);
-			getWriter().write(" : ");
-			break;
-		case TOP_LEVEL:
-			break;
-		default:
-			throw new BSONException("Invalid contextType.");
+			case ARRAY:
+				// don't write Array element names in JSON
+				if (getContext().hasElements()) {
+					getWriter().write(", ");
+				}
+				break;
+			case DOCUMENT:
+			case SCOPE_DOCUMENT:
+				if (getContext().hasElements()) {
+					getWriter().write(",");
+				}
+				if (settings.isIndent()) {
+					getWriter().write(settings.getNewLineCharacters());
+					getWriter().write(getContext().getIndentation());
+				} else {
+					getWriter().write(" ");
+				}
+				writeStringHelper(name);
+				getWriter().write(" : ");
+				break;
+			case TOP_LEVEL:
+				break;
+			default:
+				throw new BSONException("Invalid contextType.");
 		}
 
 		getContext().hasElements(true);
@@ -261,59 +256,59 @@ public class JsonWriter extends org.bson.json.JsonWriter {
 		getWriter().write('"');
 		for (final char c : str.toCharArray()) {
 			switch (c) {
-			case '"':
-				getWriter().write("\\\"");
-				break;
-			case '\\':
-				getWriter().write("\\\\");
-				break;
-			case '\b':
-				getWriter().write("\\b");
-				break;
-			case '\f':
-				getWriter().write("\\f");
-				break;
-			case '\n':
-				getWriter().write("\\n");
-				break;
-			case '\r':
-				getWriter().write("\\r");
-				break;
-			case '\t':
-				getWriter().write("\\t");
-				break;
-			default:
-				switch (Character.getType(c)) {
-				case Character.UPPERCASE_LETTER:
-				case Character.LOWERCASE_LETTER:
-				case Character.TITLECASE_LETTER:
-				case Character.OTHER_LETTER:
-				case Character.DECIMAL_DIGIT_NUMBER:
-				case Character.LETTER_NUMBER:
-				case Character.OTHER_NUMBER:
-				case Character.SPACE_SEPARATOR:
-				case Character.CONNECTOR_PUNCTUATION:
-				case Character.DASH_PUNCTUATION:
-				case Character.START_PUNCTUATION:
-				case Character.END_PUNCTUATION:
-				case Character.INITIAL_QUOTE_PUNCTUATION:
-				case Character.FINAL_QUOTE_PUNCTUATION:
-				case Character.OTHER_PUNCTUATION:
-				case Character.MATH_SYMBOL:
-				case Character.CURRENCY_SYMBOL:
-				case Character.MODIFIER_SYMBOL:
-				case Character.OTHER_SYMBOL:
-					getWriter().write(c);
+				case '"':
+					getWriter().write("\\\"");
+					break;
+				case '\\':
+					getWriter().write("\\\\");
+					break;
+				case '\b':
+					getWriter().write("\\b");
+					break;
+				case '\f':
+					getWriter().write("\\f");
+					break;
+				case '\n':
+					getWriter().write("\\n");
+					break;
+				case '\r':
+					getWriter().write("\\r");
+					break;
+				case '\t':
+					getWriter().write("\\t");
 					break;
 				default:
-					getWriter().write("\\u");
-					getWriter().write(Integer.toHexString((c & 0xf000) >> 12));
-					getWriter().write(Integer.toHexString((c & 0x0f00) >> 8));
-					getWriter().write(Integer.toHexString((c & 0x00f0) >> 4));
-					getWriter().write(Integer.toHexString(c & 0x000f));
+					switch (Character.getType(c)) {
+						case Character.UPPERCASE_LETTER:
+						case Character.LOWERCASE_LETTER:
+						case Character.TITLECASE_LETTER:
+						case Character.OTHER_LETTER:
+						case Character.DECIMAL_DIGIT_NUMBER:
+						case Character.LETTER_NUMBER:
+						case Character.OTHER_NUMBER:
+						case Character.SPACE_SEPARATOR:
+						case Character.CONNECTOR_PUNCTUATION:
+						case Character.DASH_PUNCTUATION:
+						case Character.START_PUNCTUATION:
+						case Character.END_PUNCTUATION:
+						case Character.INITIAL_QUOTE_PUNCTUATION:
+						case Character.FINAL_QUOTE_PUNCTUATION:
+						case Character.OTHER_PUNCTUATION:
+						case Character.MATH_SYMBOL:
+						case Character.CURRENCY_SYMBOL:
+						case Character.MODIFIER_SYMBOL:
+						case Character.OTHER_SYMBOL:
+							getWriter().write(c);
+							break;
+						default:
+							getWriter().write("\\u");
+							getWriter().write(Integer.toHexString((c & 0xf000) >> 12));
+							getWriter().write(Integer.toHexString((c & 0x0f00) >> 8));
+							getWriter().write(Integer.toHexString((c & 0x00f0) >> 4));
+							getWriter().write(Integer.toHexString(c & 0x000f));
+							break;
+					}
 					break;
-				}
-				break;
 			}
 		}
 		getWriter().write('"');
@@ -350,17 +345,14 @@ public class JsonWriter extends org.bson.json.JsonWriter {
 		/**
 		 * Creates a new context.
 		 *
-		 * @param parentContext
-		 *            the parent context that can be used for going back up to
-		 *            the parent level
-		 * @param contextType
-		 *            the type of this context
-		 * @param indentChars
-		 *            the String to use for indentation at this level.
+		 * @param parentContext the parent context that can be used for going back up to
+		 *                      the parent level
+		 * @param contextType   the type of this context
+		 * @param indentChars   the String to use for indentation at this level.
 		 */
 		public Context(final Context parentContext, final BsonContextType contextType, final String indentChars) {
 			super(parentContext, contextType, indentChars);
-			this.indentation = (parentContext == null) ? indentChars : parentContext.indentation + indentChars;
+			this.indentation = (parentContext == null) ? indentChars: parentContext.indentation + indentChars;
 		}
 
 	}
