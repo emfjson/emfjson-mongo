@@ -1,5 +1,7 @@
 # MongoDB Adapter for Eclipse Modeling Framework (EMF)
 
+[![Build Status](https://secure.travis-ci.org/emfjson/emfjson-mongo.png)](http://travis-ci.org/emfjson/emfjson-mongo)
+
 An easy to use adapter that works on top of the EMF Resource API to store and retrieve EMF Models on MongoDB.
 
 ### Download
