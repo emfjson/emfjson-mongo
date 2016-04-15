@@ -2,6 +2,20 @@
 
 An easy to use adapter that works on top of the EMF Resource API to store and retrieve EMF Models on MongoDB.
 
+### Download
+
+Add the following dependency to your pom file.
+
+```xml
+<dependency>
+    <groupId>org.emfjson</groupId>
+    <artifactId>emfjson-mongo</artifactId>
+    <version>0.3.0</version>
+</dependency>
+```
+
+You can also find the jars in [maven central](http://search.maven.org/#search|ga|1|emfjson-mongo)
+
 ### Usage
 
 Setup the ResourceSet:
