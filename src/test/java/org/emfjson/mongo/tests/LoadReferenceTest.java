@@ -12,7 +12,6 @@ import org.eclipse.emf.ecore.EcorePackage;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.emfjson.EMFJs;
 import org.emfjson.jackson.resource.JsonResourceFactory;
 import org.emfjson.model.ModelPackage;
 import org.emfjson.model.TestA;
@@ -46,7 +45,6 @@ public class LoadReferenceTest {
 		resourceSet.getURIConverter().getURIHandlers().add(0, handler);
 
 		Map<String, Object> options = new HashMap<>();
-		options.put(EMFJs.OPTION_REF_FIELD, "_ref");
 
 		resourceSet.getLoadOptions().putAll(options);
 	}

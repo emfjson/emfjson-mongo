@@ -9,7 +9,7 @@ import org.bson.Document;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.URIConverter.Saveable;
-import org.emfjson.jackson.JacksonOptions;
+import org.emfjson.jackson.annotations.EcoreReferenceInfo;
 import org.emfjson.jackson.module.EMFModule;
 import org.emfjson.mongo.MongoHandler;
 
@@ -23,10 +23,16 @@ public class MongoOutputStream extends ByteArrayOutputStream implements Saveable
 	private final URI uri;
 	private final MongoHandler handler;
 
+	private final ObjectMapper mapper = new ObjectMapper();
+
 	public MongoOutputStream(MongoHandler handler, URI uri, Map<?, ?> options) {
 		this.handler = handler;
 		this.uri = uri;
 		this.options = options;
+
+		EMFModule module = new EMFModule();
+		module.setReferenceInfo(new EcoreReferenceInfo.Base("_ref"));
+		mapper.registerModule(module);
 	}
 
 	@Override
@@ -51,10 +57,6 @@ public class MongoOutputStream extends ByteArrayOutputStream implements Saveable
 	}
 
 	private String toJson(Resource resource) throws JsonProcessingException {
-		final ObjectMapper mapper = new ObjectMapper();
-		final JacksonOptions jacksonOptions = JacksonOptions.from(options);
-		mapper.registerModule(new EMFModule(resource.getResourceSet(), jacksonOptions));
-
 		final JsonNode contents = mapper.valueToTree(resource);
 		final ObjectNode resourceNode = mapper.createObjectNode();
 		final String id = uri.segment(2);

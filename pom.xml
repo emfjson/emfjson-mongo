@@ -56,7 +56,7 @@
 		<dependency>
 			<groupId>org.emfjson</groupId>
 			<artifactId>emfjson-jackson</artifactId>
-			<version>0.15.0</version>
+			<version>1.0.0-rc.1</version>
 		</dependency>
 
 		<dependency>

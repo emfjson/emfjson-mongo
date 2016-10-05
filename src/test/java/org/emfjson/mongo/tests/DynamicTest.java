@@ -7,7 +7,6 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.emfjson.EMFJs;
 import org.emfjson.jackson.resource.JsonResourceFactory;
 import org.emfjson.mongo.MongoHandler;
 import org.junit.After;
@@ -29,10 +28,6 @@ public class DynamicTest {
 	private Map<String, Object> options = new HashMap<>();
 	private URI testURI1 = URI.createURI("mongodb://localhost:27017/emfjson-test/models/foo");
 	private URI testURI2 = URI.createURI("mongodb://localhost:27017/emfjson-test/models/foo-model");
-
-	{
-		options.put(EMFJs.OPTION_REF_FIELD, "_ref");
-	}
 
 	@Before
 	public void setUp() throws IOException {

@@ -13,7 +13,7 @@ import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
 import org.eclipse.emf.ecore.util.EcoreUtil;
-import org.emfjson.EMFJs;
+import org.emfjson.jackson.module.EMFModule;
 import org.emfjson.jackson.resource.JsonResource;
 import org.emfjson.jackson.resource.JsonResourceFactory;
 import org.emfjson.mongo.MongoHandler;
@@ -62,7 +62,7 @@ public class UseIdTest {
 
 	private Map<?, ?> getOptions() {
 		Map<String, Object> options = new HashMap<>();
-		options.put(EMFJs.OPTION_USE_ID, true);
+		options.put(EMFModule.Feature.OPTION_USE_ID.name(), true);
 		return options;
 	}
 
