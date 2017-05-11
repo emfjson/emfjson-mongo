@@ -4,17 +4,8 @@ import com.mongodb.MongoClient;
 import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import org.eclipse.emf.common.util.URI;
-import org.eclipse.emf.ecore.resource.impl.URIHandlerImpl;
-import org.emfjson.mongo.streams.MongoInputStream;
-import org.emfjson.mongo.streams.MongoOutputStream;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.HashMap;
-import java.util.Map;
-
-public class MongoHandler extends URIHandlerImpl {
+public class MongoHandler {
 
 	public static final String ID_FIELD = "_id";
 	public static final String TYPE_FIELD = "_type";
@@ -24,41 +15,6 @@ public class MongoHandler extends URIHandlerImpl {
 
 	public MongoHandler(MongoClient client) {
 		this.client = client;
-	}
-
-	@Override
-	public boolean canHandle(URI uri) {
-		return uri.scheme().equals("mongodb");
-	}
-
-	@Override
-	public InputStream createInputStream(URI uri, Map<?, ?> options) throws IOException {
-		return new MongoInputStream(this, uri, options);
-	}
-
-	@Override
-	public OutputStream createOutputStream(URI uri, Map<?, ?> options) throws IOException {
-		return new MongoOutputStream(this, uri, options);
-	}
-
-	@Override
-	public void delete(URI uri, Map<?, ?> options) throws IOException {
-		final MongoCollection<Document> collection = getCollection(uri);
-		final Map<String, Object> filter = new HashMap<>();
-		filter.put(ID_FIELD, uri.segment(2));
-		filter.put(TYPE_FIELD, "resource");
-
-		collection.findOneAndDelete(new Document(filter));
-	}
-
-	@Override
-	public boolean exists(URI uri, Map<?, ?> options) {
-		final MongoCollection<Document> collection = getCollection(uri);
-		final Map<String, Object> filter = new HashMap<>();
-		filter.put(ID_FIELD, uri.segment(2));
-		filter.put(TYPE_FIELD, "resource");
-
-		return collection.find(new Document(filter)).limit(1).first() != null;
 	}
 
 	protected String db(URI uri) {

@@ -6,11 +6,11 @@ import org.eclipse.emf.ecore.EObject;
 import org.eclipse.emf.ecore.resource.Resource;
 import org.eclipse.emf.ecore.resource.ResourceSet;
 import org.eclipse.emf.ecore.resource.impl.ResourceSetImpl;
-import org.emfjson.jackson.resource.JsonResourceFactory;
 import org.emfjson.model.ModelFactory;
 import org.emfjson.model.TestA;
 import org.emfjson.model.TestB;
 import org.emfjson.mongo.MongoHandler;
+import org.emfjson.mongo.MongoResourceFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,8 +61,9 @@ public class Benchmark {
 
 		for (int i = 0; i < times; i++) {
 			ResourceSet resourceSet = new ResourceSetImpl();
-			resourceSet.getResourceFactoryRegistry().getExtensionToFactoryMap().put("*", new JsonResourceFactory());
-			resourceSet.getURIConverter().getURIHandlers().add(0, new MongoHandler(client));
+			resourceSet.getResourceFactoryRegistry()
+					.getExtensionToFactoryMap()
+					.put("*", new MongoResourceFactory(new MongoHandler(client)));
 
 			Resource resource = resourceSet.createResource(mongoURI.appendSegment("test"));
 			resource.getContents().addAll(createModel());

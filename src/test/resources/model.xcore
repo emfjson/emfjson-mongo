@@ -2,7 +2,7 @@
     bundleManifest="false",
     modelDirectory="emfjson-mongo/src/test/java-gen",
     rootExtendsClass="org.eclipse.emf.ecore.impl.MinimalEObjectImpl",
-    complianceLevel="7.0"
+    complianceLevel="8.0"
 )
 package org.emfjson.model
 

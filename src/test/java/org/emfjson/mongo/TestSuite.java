@@ -1,17 +1,15 @@
 package org.emfjson.mongo;
 
-import org.emfjson.mongo.tests.*;
+import org.emfjson.mongo.tests.MongoResourceLoadTest;
+import org.emfjson.mongo.tests.MongoResourceSaveTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(Suite.class)
-@Suite.SuiteClasses({
-		MongoHandlerSaveTest.class,
-		MongoHandlerLoadTest.class,
-		LoadReferenceTest.class,
-		MongoHandlerSaveAndLoadTest.class,
-		UseIdTest.class,
-		DynamicTest.class
+@SuiteClasses({
+		MongoResourceSaveTest.class,
+		MongoResourceLoadTest.class
 })
 public class TestSuite {
 }
