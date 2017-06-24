@@ -5,7 +5,6 @@ import com.mongodb.client.MongoCollection;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.eclipse.emf.common.util.EList;
-import org.eclipse.emf.common.util.TreeIterator;
 import org.eclipse.emf.common.util.URI;
 import org.eclipse.emf.ecore.EAttribute;
 import org.eclipse.emf.ecore.EClass;
@@ -19,7 +18,10 @@ import java.io.OutputStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import static org.emfjson.mongo.EcoreHelpers.uriOf;
 import static org.emfjson.mongo.MongoHandler.ID_FIELD;
 
 public class MongoResource extends ResourceImpl {
@@ -41,8 +43,13 @@ public class MongoResource extends ResourceImpl {
 		return super.getContents();
 	}
 
+
 	public ObjectId getID(EObject object) {
 		return objectToIds.get(object);
+	}
+
+	public ObjectId getID() {
+		return id;
 	}
 
 	@Override
@@ -60,7 +67,7 @@ public class MongoResource extends ResourceImpl {
 		MongoCollection<Document> collection = handler.getCollection(uri);
 
 		Document filter = new Document("eClass", "EResource")
-				.append("uri", getURI().toString());
+				.append("uri", uriOf(this));
 
 		Document document = collection
 				.find(filter)
@@ -75,24 +82,23 @@ public class MongoResource extends ResourceImpl {
 		List<ObjectId> contents = (List<ObjectId>) document.get("contents");
 		FindIterable<Document> documents = collection.find(new Document("_id", new Document("$in", contents)));
 
-		documents.forEach((Consumer<Document>) e -> {
-			String type = e.get("eClass", String.class);
-			EClass eClass = (EClass) resourceSet.getEObject(URI.createURI(type), true);
-			EObject object = EcoreUtil.create(eClass);
+		Map<EObject, Map<EReference, List<ObjectId>>> resolving = new HashMap<>();
 
-			for (EAttribute attribute : eClass.getEAllAttributes()) {
-				if (e.containsKey(attribute.getName())) {
-					Object value = e.get(attribute.getName());
+		documents.forEach((Consumer<Document>) e -> getContents().add(fromDocument(collection, e, resolving)));
 
-					if (value != null && !attribute.isMany()) {
-						Object converted = EcoreUtil.createFromString(attribute.getEAttributeType(), value.toString());
-						object.eSet(attribute, converted);
-					}
-				}
-			}
+		resolving.forEach(((object, map) ->
+				map.forEach((reference, objectIds) -> {
+							List<EObject> objects = objectIds.stream()
+									.map(idToObjects::get)
+									.collect(Collectors.toList());
 
-			getContents().add(object);
-		});
+							if (reference.isMany()) {
+								((List<EObject>) object.eGet(reference)).addAll(objects);
+							} else if (!objects.isEmpty()) {
+								object.eSet(reference, objects.get(0));
+							}
+						}
+				)));
 	}
 
 	@Override
@@ -104,7 +110,7 @@ public class MongoResource extends ResourceImpl {
 		MongoCollection<Document> collection = handler.getCollection(uri);
 
 		Document resourceDoc = new Document("eClass", "EResource")
-				.append("uri", getURI().toString());
+				.append("uri", uriOf(this));
 
 		collection.insertOne(resourceDoc);
 
@@ -112,17 +118,15 @@ public class MongoResource extends ResourceImpl {
 
 		Map<EObject, Document> documents = new HashMap<>();
 
-		for (TreeIterator<EObject> it = getAllContents(); it.hasNext(); ) {
-			EObject object = it.next();
+		getAllContents().forEachRemaining(object -> {
 			Document document = asDocument(object);
 			document.append("eResource", resourceID);
-			documents.put(object, document);
-		}
+			documents.putIfAbsent(object, document);
+		});
 
 		collection.insertMany(new ArrayList<>(documents.values()));
 
-		for (EObject object : documents.keySet()) {
-			Document document = documents.get(object);
+		documents.forEach((object, document) -> {
 			ObjectId id = document.getObjectId(ID_FIELD);
 			objectToIds.put(object, id);
 			idToObjects.put(id, object);
@@ -135,26 +139,40 @@ public class MongoResource extends ResourceImpl {
 
 						List<ObjectId> identifiers = new ArrayList<>();
 						for (EObject value : values) {
-							Document target = documents.get(value);
-							identifiers.add(target.getObjectId(ID_FIELD));
+							if (value.eResource() == null) {
+								// add error
+							} else {
+								Document target = documents.get(value);
+								if (target != null) {
+									identifiers.add(target.getObjectId(ID_FIELD));
+								} else {
+									// add error
+								}
+							}
 						}
 
+						// add all references
 						document.append(reference.getName(), identifiers);
-						collection.findOneAndUpdate(new Document(ID_FIELD, id),
-								new Document("$set", document));
+						collection.findOneAndUpdate(new Document(ID_FIELD, id), new Document("$set", document));
 
 					} else {
 						EObject value = (EObject) object.eGet(reference);
-						Document target = documents.get(value);
-						document.append(reference.getName(), target.getObjectId(ID_FIELD));
 
-						collection.findOneAndUpdate(
-								new Document(ID_FIELD, id),
-								new Document("$set", document));
+						if (value.eResource() == null) {
+							// add error
+						} else {
+							Document target = documents.get(value);
+							if (target != null) {
+								document.append(reference.getName(), target.getObjectId(ID_FIELD));
+								collection.findOneAndUpdate(new Document(ID_FIELD, id), new Document("$set", document));
+							} else {
+								// add error
+							}
+						}
 					}
 				}
 			}
-		}
+		});
 	}
 
 	@Override
@@ -163,31 +181,93 @@ public class MongoResource extends ResourceImpl {
 	}
 
 	private Document asDocument(EObject object) {
-		Document document = new Document("eClass", EcoreUtil.getURI(object.eClass()).toString())
-				.append("eResource", object.eResource().getURI().toString());
+		Document document = new Document("eClass", uriOf(object.eClass()))
+				.append("eResource", uriOf(object.eResource()));
 
-		for (EAttribute attribute : object.eClass().getEAttributes()) {
-			if (object.eIsSet(attribute)) {
-				if (!attribute.isMany()) {
-					document.append(attribute.getName(), object.eGet(attribute));
-				}
-			} else {
-				document.append(attribute.getName(), null);
-			}
-		}
+		object.eClass().getEAllAttributes()
+				.forEach(attribute -> {
+					if (object.eIsSet(attribute)) {
+						if (!attribute.isMany()) {
+							document.append(attribute.getName(), object.eGet(attribute));
+						}
+					} else {
+						document.append(attribute.getName(), null);
+					}
+				});
 
-		for (EReference reference : object.eClass().getEAllReferences()) {
-			if (reference.isMany()) {
-				document.append(reference.getName(), new ArrayList<ObjectId>());
-			} else {
-				document.append(reference.getName(), null);
-			}
-		}
+		object.eClass().getEAllReferences()
+				.forEach(reference -> {
+					if (reference.isMany()) {
+						document.append(reference.getName(), new ArrayList<ObjectId>());
+					} else {
+						document.append(reference.getName(), null);
+					}
+				});
 
 		return document;
 	}
 
-	public ObjectId getID() {
-		return id;
+	private EObject fromDocument(MongoCollection<Document> collection, Document e, Map<EObject, Map<EReference, List<ObjectId>>> resolving) {
+		String type = e.get("eClass", String.class);
+		EClass eClass = (EClass) resourceSet.getEObject(URI.createURI(type), true);
+		EObject object = EcoreUtil.create(eClass);
+
+		for (EAttribute attribute : eClass.getEAllAttributes()) {
+			if (e.containsKey(attribute.getName())) {
+				Object value = e.get(attribute.getName());
+
+				if (value != null && !attribute.isMany()) {
+					Object converted = EcoreUtil.createFromString(attribute.getEAttributeType(), value.toString());
+					object.eSet(attribute, converted);
+				}
+			}
+		}
+
+		for (EReference reference : eClass.getEAllReferences()) {
+			if (reference.isContainment()) {
+
+				if (e.containsKey(reference.getName())) {
+					if (reference.isMany()) {
+						@SuppressWarnings("unchecked")
+						List<ObjectId> values = (List<ObjectId>) e.get(reference.getName());
+						if (values != null && !values.isEmpty()) {
+							@SuppressWarnings("unchecked")
+							List<EObject> list = (List<EObject>) object.eGet(reference);
+							collection.find(new Document("_id", new Document("$in", values)))
+									.forEach((Consumer<Document>) doc -> list.add(fromDocument(collection, doc, resolving)));
+						}
+					} else {
+						ObjectId value = (ObjectId) e.get(reference.getName());
+						if (value != null) {
+							collection.find(new Document("_id", value))
+									.forEach((Consumer<Document>) doc -> object.eSet(reference, fromDocument(collection, doc, resolving)));
+						}
+					}
+				}
+			} else {
+				if (e.containsKey(reference.getName())) {
+					Map<EReference, List<ObjectId>> map = resolving.computeIfAbsent(object, k -> new HashMap<>());
+
+					if (reference.isMany()) {
+						@SuppressWarnings("unchecked")
+						List<ObjectId> values = (List<ObjectId>) e.get(reference.getName());
+						if (!values.isEmpty()) {
+							map.putIfAbsent(reference, values);
+						}
+
+					} else {
+						ObjectId value = (ObjectId) e.get(reference.getName());
+						if (value != null) {
+							map.putIfAbsent(reference, Stream.of(value).collect(Collectors.toList()));
+						}
+					}
+				}
+			}
+		}
+
+		objectToIds.putIfAbsent(object, e.getObjectId(MongoHandler.ID_FIELD));
+		idToObjects.putIfAbsent(e.getObjectId(MongoHandler.ID_FIELD), object);
+
+		return object;
 	}
 }
